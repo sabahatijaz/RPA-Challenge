@@ -35,7 +35,7 @@ class IndividualInvestmentScraper:
 
             self.selenium_manager.click_button(pdf_button, self.driver)
 
-            sleep(6)
+            sleep(30)
 
     def extract_information(self, html_tag, link=False):
         """Takes in a tag and extract meaningful information from it.
@@ -83,68 +83,68 @@ class IndividualInvestmentScraper:
 
             investment_data['UII'] = self.extract_information(row[0])
             investment_data['UII Link'] = self.extract_information(row[0], True)
-            #############################################################################################################################################
-            self.download_pdf(investment_data['UII Link'])
-            pdfname = self.extract_information(row[0])
-            path = os.path.join(os.getcwd(), 'output', str(pdfname) + '.pdf')
-
-            while True:
-                if os.path.exists(path):
-                    break
-                else:
-                    continue
-            # Creating a pdf file object
-            st = os.stat(path)
-            os.chmod(path, st.st_mode | _stat.S_IWOTH)
-            pdfFileObj = open(path, 'rb')
-            # Creang a pdf reader object
-            pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
-            pageObj = pdfReader.getPage(0)
-            text = pageObj.extractText().split("  ")
-            result = text[3].find('Name of this Investment')
-            result = result + 22
-            txt2 = text[3].find('Unique Investment Identifier (UII):')
-            Name_of_this_Investment = text[3][result + 5:txt2 - 4]
-            txt2 = txt2 + 33
-            txt3 = text[3].find('Section B')
-            Unique_Investment_Identifier = text[3][txt2 + 5:txt3 - 1]
-            self.extract_information(row[0])
-            Comparison_data['Unique_Investment_Identifier'] = Unique_Investment_Identifier
-            Comparison_data['UII'] = self.extract_information(row[0])
-            if self.extract_information(row[0]) == Unique_Investment_Identifier:
-                Comparison_data['ComparisonStatus'] = "same"
-            else:
-                Comparison_data['ComparisonStatus'] = "Different"
-            #
-            #
-            #
-            ####################################################################################################################
             investment_data['Bureau'] = self.extract_information(row[1])
             investment_data['Investment Title'] = self.extract_information(row[2])
-            Comparison_data['Name_of_this_Investment'] = Name_of_this_Investment
-            Comparison_data['Investment_Title'] = self.extract_information(row[2])
-            if Name_of_this_Investment == self.extract_information(row[2]):
-                Comparison_data['ComparisonStatus2'] = "same"
-            else:
-                Comparison_data['ComparisonStatus2'] = "Different"
+
 
             investment_data['Total FY2021 Spending ($M)'] = self.extract_information(row[3])
             investment_data['Type'] = self.extract_information(row[4])
             investment_data['CIO Rating'] = self.extract_information(row[5])
             investment_data['# of Projects'] = self.extract_information(row[6])
+            #############################################################################################################################################
+            self.download_pdf(investment_data['UII Link'])
+            pdfname = self.extract_information(row[0])
+            path = os.path.join(os.getcwd(), 'output', str(pdfname) + '.pdf')
+
+            # while True:
+            #     if os.path.exists(path):
+            #         break
+            #     else:
+            #         print(path)
+            # Creating a pdf file object
+            if os.path.exists(path):
+                st = os.stat(path)
+                os.chmod(path, st.st_mode | _stat.S_IWOTH)
+
+                pdfFileObj = open(path, 'rb')
+                # Creang a pdf reader object
+                pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
+                pageObj = pdfReader.getPage(0)
+                text = pageObj.extractText().split("  ")
+                result = text[3].find('Name of this Investment')
+                result = result + 22
+                txt2 = text[3].find('Unique Investment Identifier (UII):')
+                Name_of_this_Investment = text[3][result + 5:txt2 - 4]
+                txt2 = txt2 + 33
+                txt3 = text[3].find('Section B')
+                Unique_Investment_Identifier = text[3][txt2 + 5:txt3 - 1]
+                self.extract_information(row[0])
+                Comparison_data['Unique_Investment_Identifier'] = Unique_Investment_Identifier
+                Comparison_data['UII'] = self.extract_information(row[0])
+                if self.extract_information(row[0]) == Unique_Investment_Identifier:
+                    Comparison_data['ComparisonStatus'] = "same"
+                else:
+                    Comparison_data['ComparisonStatus'] = "Different"
+                if Name_of_this_Investment == self.extract_information(row[2]):
+                    Comparison_data['ComparisonStatus2'] = "same"
+                else:
+                    Comparison_data['ComparisonStatus2'] = "Different"
+                Comparison_data['Name_of_this_Investment'] = Name_of_this_Investment
+                Comparison_data['Investment_Title'] = self.extract_information(row[2])
+                with open(os.path.join('output', 'Comparison.csv'), 'a') as f3:
+                    Comparison_writer = csv.DictWriter(f3, fieldnames=[
+                        'UII',
+                        'Unique_Investment_Identifier',
+                        'ComparisonStatus',
+                        'Name_of_this_Investment',
+                        'Investment_Title',
+                        'ComparisonStatus2'
+                    ])
+                    Comparison_writer.writerow(Comparison_data)
+                pdfFileObj.close()
 
             individual_investment_writer.writerow(investment_data)
-            with open(os.path.join('output', 'Comparison.csv'), 'a') as f3:
-                Comparison_writer = csv.DictWriter(f3, fieldnames=[
-                    'UII',
-                    'Unique_Investment_Identifier',
-                    'ComparisonStatus',
-                    'Name_of_this_Investment',
-                    'Investment_Title',
-                    'ComparisonStatus2'
-                ])
-                Comparison_writer.writerow(Comparison_data)
-            pdfFileObj.close()
+
 
     def parse_agencies(self, file_path='./output/Agencies.csv'):
 
